@@ -8,7 +8,11 @@ void printHello() {
 
 int main() {
   
-    printf("Example Number: %d", EXAMPLENUM);
+    #ifdef EXAMPLENUM
+        printf("Example Number: %d", EXAMPLENUM);
+    #else 
+        printf("Examplenum not defined");
+    #endif
     printHello();
     return 0;
 }
