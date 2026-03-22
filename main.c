@@ -1,7 +1,9 @@
 #include <stdio.h>
 
+#define EXAMPLENUM 25
+
 int main() {
   
-    printf("Hello, World!");
+    printf("Example Number: %d", EXAMPLENUM);
     return 0;
 }
