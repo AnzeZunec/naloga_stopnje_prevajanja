@@ -1,6 +1,7 @@
 name: 29940_test
 
 on:
+  # Workflow se sproži ob vsakem pushu na main vejo.
   push:
     branches:
       - main
@@ -11,10 +12,11 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # Prenesi repozitorij na runner.
+      # Prenos vsebine repozitorija na runner.
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Preverimo obstoj testnih skript.
       # Standardno napako preusmerimo v napaka.txt.
       - name: Check test scripts
         shell: bash
@@ -31,7 +33,8 @@ jobs:
             echo "Vse testne skripte obstajajo."
           fi
 
-      # Datoteko napaka.txt pošljemo naprej kot artefakt.
+      # Datoteko napaka.txt pošljemo kot artefakt,
+      # da jo lahko uporabi naslednji job.
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -43,7 +46,7 @@ jobs:
     needs: check_tests
     runs-on: self-hosted
 
-    # Matrika je obvezna v eni izmed skript.
+    # Vsak test se požene kot ločen job
     strategy:
       fail-fast: false
       matrix:
@@ -53,6 +56,7 @@ jobs:
           - tests/test_clean.sh
 
     steps:
+      # Ponovni checkout repozitorija.
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -62,7 +66,7 @@ jobs:
         with:
           name: test-status
 
-      # Če napaka.txt ni prazna, se drugi job prekine.
+      # Če napaka.txt ni prazna, se testi ne smejo izvajati.
       - name: Check napaka.txt
         shell: bash
         run: |
@@ -72,7 +76,7 @@ jobs:
             exit 1
           fi
 
-      # Poženemo test iz matrike.
+      # Poženemo posamezno testno skripto iz matrike.
       - name: Run test
         shell: bash
         run: |
