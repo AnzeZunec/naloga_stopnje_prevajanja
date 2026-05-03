@@ -1,0 +1,80 @@
+name: 29940_test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check_tests:
+    # Prvi job preveri, ali obstajajo testne skripte.
+    runs-on: self-hosted
+
+    steps:
+      # Prenesi repozitorij na runner.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Standardno napako preusmerimo v napaka.txt.
+      - name: Check test scripts
+        shell: bash
+        run: |
+          : > napaka.txt
+          test -f tests/test_build.sh 2>> napaka.txt
+          test -f tests/test_run.sh 2>> napaka.txt
+          test -f tests/test_clean.sh 2>> napaka.txt
+
+          if [ -s napaka.txt ]; then
+            echo "Napake pri preverjanju testnih skript:"
+            cat napaka.txt
+          else
+            echo "Vse testne skripte obstajajo."
+          fi
+
+      # Datoteko napaka.txt pošljemo naprej kot artefakt.
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-status
+          path: napaka.txt
+
+  run_tests:
+    # Drugi job je odvisen od prvega.
+    needs: check_tests
+    runs-on: self-hosted
+
+    # Matrika je obvezna v eni izmed skript.
+    strategy:
+      fail-fast: false
+      matrix:
+        test_script:
+          - tests/test_build.sh
+          - tests/test_run.sh
+          - tests/test_clean.sh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Prenesemo artefakt iz prvega joba.
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-status
+
+      # Če napaka.txt ni prazna, se drugi job prekine.
+      - name: Check napaka.txt
+        shell: bash
+        run: |
+          if [ -s napaka.txt ]; then
+            echo "napaka.txt ni prazna, testi se ne smejo izvajati."
+            cat napaka.txt
+            exit 1
+          fi
+
+      # Poženemo test iz matrike.
+      - name: Run test
+        shell: bash
+        run: |
+          chmod +x tests/*.sh
+          "${{ matrix.test_script }}"
