@@ -19,8 +19,8 @@ run: build
 clean: 
 	rm -f main.i main.s main.o $(TARGET)
 
-build_i: main.c 
-	$(CPP) -m32 main.c > main.i
+build_i: main.c
+	$(CPP) -P -m32 main.c > main.i
 
 build_s: build_i
 	$(CC) $(CFLAGS) -S -x c main.i -o main.s 
